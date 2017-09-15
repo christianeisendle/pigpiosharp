@@ -9,6 +9,11 @@ namespace PiGpio.Test
         private static PiGpioSharp pi;
         private static I2C i2c;
 
+        private static void open(int slaveAddr)
+        {
+            i2c.open(1, slaveAddr);
+        }
+
         [OneTimeSetUp]
         public static void setup()
         {
@@ -19,8 +24,7 @@ namespace PiGpio.Test
         [Test, Order(1)]
         public static void open()
         {
-            int busNumber = 1;
-            i2c.open(busNumber, 0x28);
+            open(0x28);
         }
 
         [Test, Order(2)]
@@ -33,6 +37,14 @@ namespace PiGpio.Test
         public static void openBadI2CBus()
         {
             Assert.That(() => i2c.open(10, 0x28), Throws.Exception.TypeOf<CommandFailedException>().With.Property("Error").EqualTo(ErrorCode.PI_BAD_I2C_BUS));
+        }
+
+        [Test]
+        public static void writeDeviceToNonExistingDevice()
+        {
+            byte[] tmp = { 0, 1, 2 };
+            open(0x30);
+            Assert.That(() => i2c.writeDevice(tmp), Throws.Exception.TypeOf<CommandFailedException>().With.Property("Error").EqualTo(ErrorCode.PI_I2C_WRITE_FAILED));
         }
     }
 }
