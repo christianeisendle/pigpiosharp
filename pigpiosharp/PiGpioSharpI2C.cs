@@ -34,18 +34,11 @@ namespace PiGpio
 		public void open(int bus, int address, int i2c_flags = 0)
 		{
 			m_handle = m_pi.executeCommand(I2CO, bus, address, i2c_flags);
-			if (m_handle < 0)
-			{
-				throw new Exception("Unable to open I2C bus");
-			}
 		}
 
 		public void close()
 		{
-			if (m_pi.executeCommand(I2CC, m_handle, 0) < 0)
-			{ 
-				throw new Exception("Unable to close I2C bus");
-			}
+			m_pi.executeCommand(I2CC, m_handle, 0);
 		}
 	}
 }
