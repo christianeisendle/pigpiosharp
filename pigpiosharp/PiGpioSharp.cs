@@ -177,7 +177,7 @@ namespace PiGpio
         }
     }
 
-    public enum CommandCode : int
+    public enum CommandCode
     {
         PI_CMD_MODES = 0,
         PI_CMD_MODEG = 1,
@@ -486,7 +486,7 @@ namespace PiGpio
         {
             m_host = host;
             m_port = port;
-            connect();
+            Connect();
         }
 
         public PiGpioSharp()
@@ -505,7 +505,7 @@ namespace PiGpio
             {
                 m_host = "localhost";
             }
-            connect();
+            Connect();
         }
 
         public int Port
@@ -518,7 +518,7 @@ namespace PiGpio
             get { return m_host; }
         }
 
-        void connect()
+        void Connect()
         {
 
             IPAddress ipAddress = Dns.GetHostAddresses(m_host)[0];
@@ -529,7 +529,7 @@ namespace PiGpio
             m_socket.SetSocketOption(SocketOptionLevel.Tcp, SocketOptionName.NoDelay, 1);
         }
 
-        public int executeCommand(CommandCode command, int p1, int p2, int p3 = 0, byte[] ext = null)
+        public int ExecuteCommand(CommandCode command, int p1, int p2, int p3 = 0, byte[] ext = null)
         {
             var data = new List<byte>();
             byte[] resp = new byte[SOCKET_CMD_RESP_LENGTH];

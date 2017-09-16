@@ -10,19 +10,19 @@
             m_pi = pi;
         }
 
-        public void open(int bus, int address, int i2c_flags = 0)
+        public void Open(int bus, int address, int i2c_flags = 0)
         {
-            m_handle = m_pi.executeCommand(CommandCode.PI_CMD_I2CO, bus, address, i2c_flags);
+            m_handle = m_pi.ExecuteCommand(CommandCode.PI_CMD_I2CO, bus, address, i2c_flags);
         }
 
-        public void close()
+        public void Close()
         {
-            m_pi.executeCommand(CommandCode.PI_CMD_I2CC, m_handle, 0);
+            m_pi.ExecuteCommand(CommandCode.PI_CMD_I2CC, m_handle, 0);
         }
 
-        public void writeDevice(byte[] data)
+        public void WriteDevice(byte[] data)
         {
-            m_pi.executeCommand(CommandCode.PI_CMD_I2CWD, m_handle, 0, data.Length, data);
+            m_pi.ExecuteCommand(CommandCode.PI_CMD_I2CWD, m_handle, 0, data.Length, data);
         }
     }
 }

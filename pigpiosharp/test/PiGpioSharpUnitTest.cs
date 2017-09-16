@@ -6,7 +6,7 @@ namespace PiGpio.Test
 	public static class PiGpioSharpUnitTest
 	{
 		[Test]
-		public static void constructorWithEnvironmentVariableSet()
+		public static void ConstructorWithEnvironmentVariableSet()
 		{
 			string tst_addr = "raspi";
 			string tst_port = "8888";
@@ -17,8 +17,8 @@ namespace PiGpio.Test
 			Assert.That(pi.Host, Is.EqualTo(tst_addr));
 		}
 
-		[Test]
-		public static void constructor()
+        [Test]
+        public static void DefaultConstructor()
 		{
 			string tst_addr = "raspi";
 			int tst_port = 8888;
@@ -28,7 +28,7 @@ namespace PiGpio.Test
 		}
 
 		[Test]
-		public static void constructorWithEnvironmentVariableNotSet()
+		public static void ConstructorWithEnvironmentVariableNotSet()
 		{
 			Environment.SetEnvironmentVariable("PIGPIO_ADDR", null);
 			Environment.SetEnvironmentVariable("PIGPIO_PORT", null);

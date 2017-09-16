@@ -7,42 +7,42 @@ namespace PiGpio.Test
         static PiGpioSharp pi;
         static I2C i2c;
 
-        static void open(int slaveAddr)
+        static void Open(int slaveAddr)
         {
-            i2c.open(1, slaveAddr);
+            i2c.Open(1, slaveAddr);
         }
 
         [OneTimeSetUp]
-        public static void setup()
+        public static void Setup()
         {
             pi = new PiGpioSharp("raspi", 8888);
             i2c = new I2C(pi);
         }
 
         [Test, Order(1)]
-        public static void open()
+        public static void Open()
         {
-            open(0x28);
+            Open(0x28);
         }
 
         [Test, Order(2)]
-        public static void close()
+        public static void Close()
         {
-            i2c.close();
+            i2c.Close();
         }
 
         [Test]
-        public static void openBadI2CBus()
+        public static void OpenBadI2CBus()
         {
-            Assert.That(() => i2c.open(10, 0x28), Throws.Exception.TypeOf<CommandFailedException>().With.Property("Error").EqualTo(ErrorCode.PI_BAD_I2C_BUS));
+            Assert.That(() => i2c.Open(10, 0x28), Throws.Exception.TypeOf<CommandFailedException>().With.Property("Error").EqualTo(ErrorCode.PI_BAD_I2C_BUS));
         }
 
         [Test]
-        public static void writeDeviceToNonExistingDevice()
+        public static void WriteDeviceToNonExistingDevice()
         {
             byte[] tmp = { 0, 1, 2 };
-            open(0x30);
-            Assert.That(() => i2c.writeDevice(tmp), Throws.Exception.TypeOf<CommandFailedException>().With.Property("Error").EqualTo(ErrorCode.PI_I2C_WRITE_FAILED));
+            Open(0x30);
+            Assert.That(() => i2c.WriteDevice(tmp), Throws.Exception.TypeOf<CommandFailedException>().With.Property("Error").EqualTo(ErrorCode.PI_I2C_WRITE_FAILED));
         }
     }
 }
