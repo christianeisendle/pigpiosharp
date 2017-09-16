@@ -24,5 +24,11 @@
         {
             m_pi.ExecuteCommand(CommandCode.PI_CMD_I2CWD, m_handle, 0, data.Length, data);
         }
+
+        public byte[] ReadDevice(int count)
+        {
+            var numReceivedBytes = m_pi.ExecuteCommand(CommandCode.PI_CMD_I2CRD, m_handle, count);
+            return m_pi.GetResponse(count);
+        }
     }
 }

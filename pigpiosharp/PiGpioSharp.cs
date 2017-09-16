@@ -543,13 +543,27 @@ namespace PiGpio
                 data.AddRange(ext);
             }
             m_socket.Send(data.ToArray());
-            m_socket.Receive(resp, SOCKET_CMD_RESP_LENGTH, SocketFlags.None);
+            resp = GetResponse(SOCKET_CMD_RESP_LENGTH);
             var res = BitConverter.ToInt32(resp, 12);
             if (res < 0)
             {
                 throw new CommandFailedException((ErrorCode)res);
             }
             return res;
+        }
+
+        public byte[] GetResponse(int count)
+        {
+            byte[] resp = new byte[count];
+            int totalBytes = 0;
+            int bytesReceived;
+
+            do
+            {
+                bytesReceived = m_socket.Receive(resp, totalBytes, count - totalBytes, SocketFlags.None);
+                totalBytes += bytesReceived;
+            } while (totalBytes < count);
+            return resp;
         }
     }
 }
