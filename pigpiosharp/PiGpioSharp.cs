@@ -7,7 +7,7 @@ namespace PiGpio
 {
     public class CommandFailedException : Exception
     {
-        private static Dictionary<ErrorCode, string> errorMessages = new Dictionary<ErrorCode, string>()
+        static Dictionary<ErrorCode, string> errorMessages = new Dictionary<ErrorCode, string>
             {
                { ErrorCode.PI_INIT_FAILED      , "pigpio initialisation failed"},
                { ErrorCode.PI_BAD_USER_GPIO    , "GPIO not 0-31"},
@@ -153,18 +153,18 @@ namespace PiGpio
                { ErrorCode.PI_NOT_SPI_GPIO     , "no bit bang SPI in progress on GPIO"},
                { ErrorCode.PI_BAD_EVENT_ID     , "bad event id"}
             };
-        private ErrorCode m_errorcode;
+        ErrorCode m_errorcode;
 
         public CommandFailedException(ErrorCode e)
         {
             m_errorcode = e;
         }
 
-        public override String Message
+        public override string Message
         {
             get
             {
-                return CommandFailedException.errorMessages[m_errorcode];
+                return errorMessages[m_errorcode];
             }
         }
 
@@ -329,10 +329,10 @@ namespace PiGpio
 
     public class PiGpioSharp
     {
-        private string m_host;
-        private int m_port;
-        private Socket m_socket;
-        private const int SOCKET_CMD_RESP_LENGTH = 16;
+        string m_host;
+        int m_port;
+        Socket m_socket;
+        const int SOCKET_CMD_RESP_LENGTH = 16;
 
         public PiGpioSharp(string host = "localhost", int port = 8888)
         {
@@ -370,11 +370,11 @@ namespace PiGpio
             get { return m_host; }
         }
 
-        private void connect()
+        void connect()
         {
 
             IPAddress ipAddress = Dns.GetHostAddresses(m_host)[0];
-            IPEndPoint remote = new IPEndPoint(ipAddress, m_port);
+            var remote = new IPEndPoint(ipAddress, m_port);
 
             m_socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
             m_socket.Connect(remote);
@@ -383,7 +383,7 @@ namespace PiGpio
 
         public int executeCommand(int command, int p1, int p2, int p3 = 0, byte[] ext = null)
         {
-            List<byte> data = new List<byte>();
+            var data = new List<byte>();
             byte[] resp = new byte[SOCKET_CMD_RESP_LENGTH];
 
             data.AddRange(BitConverter.GetBytes(command));

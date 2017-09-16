@@ -1,10 +1,9 @@
 ﻿using System;
-using PiGpio;
 using NUnit.Framework;
 
 namespace PiGpio.Test
 {
-	public class PiGpioSharpUnitTest
+	public static class PiGpioSharpUnitTest
 	{
 		[Test]
 		public static void constructorWithEnvironmentVariableSet()

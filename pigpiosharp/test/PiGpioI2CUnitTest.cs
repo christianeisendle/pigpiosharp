@@ -1,15 +1,13 @@
-﻿using System;
-using PiGpio;
-using NUnit.Framework;
+﻿using NUnit.Framework;
 
 namespace PiGpio.Test
 {
-    public class PiGpioI2CUnitTest
+    public static class PiGpioI2CUnitTest
     {
-        private static PiGpioSharp pi;
-        private static I2C i2c;
+        static PiGpioSharp pi;
+        static I2C i2c;
 
-        private static void open(int slaveAddr)
+        static void open(int slaveAddr)
         {
             i2c.open(1, slaveAddr);
         }
