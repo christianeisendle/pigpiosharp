@@ -29,6 +29,7 @@
   <ItemGroup>
     <Compile Include="PiGpioSharp.cs" />
     <Compile Include="PiGpioSharpI2C.cs" />
+    <Compile Include="PiGpioSharpGpio.cs" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="System" />
