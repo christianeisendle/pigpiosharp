@@ -2,63 +2,60 @@
 
 namespace PiGpio.Test
 {
-    public static class PiGpioI2CUnitTest
+    public static class PiGpioUnitTest
     {
         static PiGpioSharp pi;
-        static I2C i2c;
-
-        static void Open(int slaveAddr)
-        {
-            i2c.Open(1, slaveAddr);
-        }
+        static Gpio gpio;
 
         [OneTimeSetUp]
         public static void Setup()
         {
             pi = new PiGpioSharp("raspi", 8888);
-            i2c = new I2C(pi);
-        }
-
-        [Test, Order(1)]
-        public static void Open()
-        {
-            Open(0x28);
-        }
-
-        [Test, Order(2)]
-        public static void Close()
-        {
-            i2c.Close();
+            gpio = new Gpio(pi);
         }
 
         [Test]
-        public static void OpenBadI2CBus()
+        public static void SetMode()
         {
-            Assert.That(() => i2c.Open(10, 0x28), Throws.Exception.TypeOf<CommandFailedException>().With.Property("Error").EqualTo(ErrorCode.PI_BAD_I2C_BUS));
+            gpio.SetMode(26, GpioMode.OUTPUT);
         }
 
         [Test]
-        public static void WriteDeviceToNonExistingDevice()
+        public static void GetMode()
         {
-            byte[] tmp = { 0, 1, 2 };
-            Open(0x30);
-            Assert.That(() => i2c.WriteDevice(tmp), Throws.Exception.TypeOf<CommandFailedException>().With.Property("Error").EqualTo(ErrorCode.PI_I2C_WRITE_FAILED));
+            gpio.SetMode(26, GpioMode.OUTPUT);
+            Assert.That(() => gpio.GetMode(26), Is.EqualTo(GpioMode.OUTPUT));
+            gpio.SetMode(26, GpioMode.INPUT);
+            Assert.That(() => gpio.GetMode(26), Is.EqualTo(GpioMode.INPUT));
         }
 
         [Test]
-        public static void ReadDeviceToNonExistingDevice()
+        public static void SetPullUp()
         {
-            Open(0x30);
-            Assert.That(() => i2c.ReadDevice(10), Throws.Exception.TypeOf<CommandFailedException>().With.Property("Error").EqualTo(ErrorCode.PI_I2C_READ_FAILED));
-            Close();
+            gpio.SetMode(26, GpioMode.INPUT);
+            gpio.SetPullUpPullDown(26, GpioPullUpDown.PUD_UP);
+            Assert.That(() => gpio.Read(26), Is.EqualTo(1));
         }
 
         [Test]
-        public static void ReadDevice()
+        public static void SetPullDown()
         {
-            Open(0x28);
-            i2c.ReadDevice(10);
-            Close();
+            gpio.SetMode(26, GpioMode.INPUT);
+            gpio.SetPullUpPullDown(26, GpioPullUpDown.PUD_DOWN);
+            Assert.That(() => gpio.Read(26), Is.EqualTo(0));
         }
+
+        [TestCase(0)]
+        [TestCase(1)]
+        public static void Write(int value)
+        {
+            gpio.SetMode(19, GpioMode.OUTPUT);
+            gpio.SetMode(26, GpioMode.INPUT);
+            gpio.SetPullUpPullDown(26, GpioPullUpDown.PUD_OFF);
+            gpio.Write(19, value);
+            Assert.That(() => gpio.Read(26), Is.EqualTo(value));
+        }
+
+
     }
 }
