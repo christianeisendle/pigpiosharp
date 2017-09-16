@@ -43,10 +43,18 @@ namespace PiGpio.Test
             byte[] tmp = { 0, 1, 2 };
             Open(0x30);
             Assert.That(() => i2c.WriteDevice(tmp), Throws.Exception.TypeOf<CommandFailedException>().With.Property("Error").EqualTo(ErrorCode.PI_I2C_WRITE_FAILED));
+            Close();
         }
 
         [Test]
-        public static void ReadDeviceToNonExistingDevice()
+        public static void WriteDeviceWithClosedHandle()
+        {
+            byte[] tmp = { 0, 1, 2 };
+            Assert.That(() => i2c.WriteDevice(tmp), Throws.Exception.TypeOf<CommandFailedException>().With.Property("Error").EqualTo(ErrorCode.PI_BAD_HANDLE));
+        }
+
+        [Test]
+        public static void ReadDeviceFromNonExistingDevice()
         {
             Open(0x30);
             Assert.That(() => i2c.ReadDevice(10), Throws.Exception.TypeOf<CommandFailedException>().With.Property("Error").EqualTo(ErrorCode.PI_I2C_READ_FAILED));
