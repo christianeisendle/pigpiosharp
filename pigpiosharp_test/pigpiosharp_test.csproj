@@ -3,10 +3,10 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">x86</Platform>
-    <ProjectGuid>{3F9D0626-A41B-43F5-A226-9ADCD51EE41F}</ProjectGuid>
+    <ProjectGuid>{89629211-183F-4F60-8535-A93D966E2B99}</ProjectGuid>
     <OutputType>Library</OutputType>
-    <RootNamespace>pigpiosharp</RootNamespace>
-    <AssemblyName>pigpiosharp</AssemblyName>
+    <RootNamespace>pigpiosharp_test</RootNamespace>
+    <AssemblyName>pigpiosharp_test</AssemblyName>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x86' ">
@@ -27,11 +27,23 @@
     <PlatformTarget>x86</PlatformTarget>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="PiGpioSharp.cs" />
-    <Compile Include="PiGpioSharpI2C.cs" />
+    <Reference Include="nunit.framework">
+      <HintPath>..\packages\NUnit.3.8.1\lib\net45\nunit.framework.dll</HintPath>
+    </Reference>
+    <Reference Include="System" />
   </ItemGroup>
   <ItemGroup>
-    <Reference Include="System" />
+    <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="PiGpioI2CUnitTest.cs" />
+    <Compile Include="PiGpioSharpUnitTest.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\pigpiosharp\pigpiosharp.csproj">
+      <Project>{3F9D0626-A41B-43F5-A226-9ADCD51EE41F}</Project>
+      <Name>pigpiosharp</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
 </Project>
