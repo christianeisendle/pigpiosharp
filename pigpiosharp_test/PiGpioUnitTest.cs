@@ -1,4 +1,5 @@
 ﻿using NUnit.Framework;
+using System.Threading;
 
 namespace PiGpio.Test
 {
@@ -12,6 +13,12 @@ namespace PiGpio.Test
         {
             pi = new PiGpioSharp("raspi", 8888);
             gpio = new Gpio(pi);
+        }
+
+        [OneTimeTearDown]
+        public static void TearDown()
+        {
+            gpio.StopGpioChangeListener();
         }
 
         [Test]
@@ -54,6 +61,27 @@ namespace PiGpio.Test
             gpio.SetPullUpPullDown(26, GpioPullUpDown.PUD_OFF);
             gpio.Write(19, value);
             Assert.That(() => gpio.Read(26), Is.EqualTo(value));
+        }
+
+        static void ToggleGpioDelayed(object gpioNum)
+        {
+            Thread.Sleep(100);
+            gpio.Write(19, 1);
+            Thread.Sleep(100);
+            gpio.Write(19, 0);
+            Thread.Sleep(100);
+            gpio.Write(19, 1);
+        }
+
+        [Test]
+        public static void WaitForSignalChange()
+        {
+            gpio.SetMode(26, GpioMode.INPUT);
+            gpio.SetMode(19, GpioMode.OUTPUT);
+            gpio.Write(19, 0);
+            var thread = new Thread(new ParameterizedThreadStart(PiGpioUnitTest.ToggleGpioDelayed));
+            thread.Start(26);
+            gpio.WaitForEdge(26, GpioEdge.RISING_EDGE, 1000);
         }
 
 

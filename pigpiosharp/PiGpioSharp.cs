@@ -486,7 +486,7 @@ namespace PiGpio
         {
             m_host = host;
             m_port = port;
-            Connect();
+            m_socket = Connect();
         }
 
         public PiGpioSharp()
@@ -505,7 +505,7 @@ namespace PiGpio
             {
                 m_host = "localhost";
             }
-            Connect();
+            m_socket = Connect();
         }
 
         public int Port
@@ -518,33 +518,72 @@ namespace PiGpio
             get { return m_host; }
         }
 
-        void Connect()
+        public Socket Connect()
         {
 
             IPAddress ipAddress = Dns.GetHostAddresses(m_host)[0];
             var remote = new IPEndPoint(ipAddress, m_port);
 
-            m_socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-            m_socket.Connect(remote);
-            m_socket.SetSocketOption(SocketOptionLevel.Tcp, SocketOptionName.NoDelay, 1);
+            var socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+            socket.Connect(remote);
+            socket.SetSocketOption(SocketOptionLevel.Tcp, SocketOptionName.NoDelay, 1);
+            return socket;
         }
 
+        public static byte[] GetBytesFromInt32EndianessCorrected(int val)
+        {
+            var byteArray = BitConverter.GetBytes(val);
+
+            if (!BitConverter.IsLittleEndian)
+            {
+                Array.Reverse(byteArray);
+            }
+            return byteArray;
+        }
+
+		public static int GetInt32FromByteArrayEndianessCorrected(byte[] byteArray, int startIndex)
+		{
+            var tmp = new byte[4];
+            Array.Copy(byteArray, startIndex, tmp, 0, tmp.Length);
+			if (!BitConverter.IsLittleEndian)
+			{
+				Array.Reverse(tmp);
+			}
+            return BitConverter.ToInt32(tmp, 0);
+		}
+
+		public static int GetInt16FromByteArrayEndianessCorrected(byte[] byteArray, int startIndex)
+		{
+			var tmp = new byte[2];
+			Array.Copy(byteArray, startIndex, tmp, 0, tmp.Length);
+			if (!BitConverter.IsLittleEndian)
+			{
+				Array.Reverse(tmp);
+			}
+			return BitConverter.ToInt16(tmp, 0);
+		}
+
         public int ExecuteCommand(CommandCode command, int p1, int p2, int p3 = 0, byte[] ext = null)
+        {
+            return ExecuteCommand(m_socket, command, p1, p2, p3, ext);
+        }
+
+        public int ExecuteCommand(Socket s, CommandCode command, int p1, int p2, int p3 = 0, byte[] ext = null)
         {
             var data = new List<byte>();
             byte[] resp = new byte[SOCKET_CMD_RESP_LENGTH];
 
-            data.AddRange(BitConverter.GetBytes((int)command));
-            data.AddRange(BitConverter.GetBytes(p1));
-            data.AddRange(BitConverter.GetBytes(p2));
-            data.AddRange(BitConverter.GetBytes(p3));
+            data.AddRange(GetBytesFromInt32EndianessCorrected((int)command));
+            data.AddRange(GetBytesFromInt32EndianessCorrected(p1));
+            data.AddRange(GetBytesFromInt32EndianessCorrected(p2));
+            data.AddRange(GetBytesFromInt32EndianessCorrected(p3));
             if (ext != null)
             {
                 data.AddRange(ext);
             }
-            m_socket.Send(data.ToArray());
-            resp = GetResponse(SOCKET_CMD_RESP_LENGTH);
-            var res = BitConverter.ToInt32(resp, 12);
+            s.Send(data.ToArray());
+            resp = GetMessage(s, SOCKET_CMD_RESP_LENGTH);
+            var res = GetInt32FromByteArrayEndianessCorrected(resp, 12);
             if (res < 0)
             {
                 throw new CommandFailedException((ErrorCode)res);
@@ -552,18 +591,23 @@ namespace PiGpio
             return res;
         }
 
-        public byte[] GetResponse(int count)
+        public byte[] GetMessage(Socket s, int count)
         {
-            byte[] resp = new byte[count];
-            int totalBytes = 0;
-            int bytesReceived;
+			byte[] resp = new byte[count];
+			int totalBytes = 0;
+			int bytesReceived;
 
-            do
-            {
-                bytesReceived = m_socket.Receive(resp, totalBytes, count - totalBytes, SocketFlags.None);
-                totalBytes += bytesReceived;
-            } while (totalBytes < count);
-            return resp;
+			do
+			{
+				bytesReceived = s.Receive(resp, totalBytes, count - totalBytes, SocketFlags.None);
+				totalBytes += bytesReceived;
+			} while (totalBytes < count);
+			return resp;
+        }
+
+        public byte[] GetMessage(int count)
+        {
+            return GetMessage(m_socket, count);
         }
     }
 }

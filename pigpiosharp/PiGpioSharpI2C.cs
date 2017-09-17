@@ -28,7 +28,7 @@
         public byte[] ReadDevice(int count)
         {
             var numReceivedBytes = m_pi.ExecuteCommand(CommandCode.PI_CMD_I2CRD, m_handle, count);
-            return m_pi.GetResponse(count);
+            return m_pi.GetMessage(count);
         }
     }
 }
