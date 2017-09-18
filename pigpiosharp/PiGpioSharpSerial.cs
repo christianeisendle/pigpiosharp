@@ -45,5 +45,13 @@ namespace PiGpio
         {
             return (byte)m_pi.ExecuteCommand(CommandCode.PI_CMD_SERRB, m_handle, 0);
         }
+
+        public int NumOfRxBytesAvailable
+        { 
+            get 
+            { 
+                return m_pi.ExecuteCommand(CommandCode.PI_CMD_SERDA, m_handle, 0);
+            }
+        }
     }
 }
