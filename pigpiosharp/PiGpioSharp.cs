@@ -2,6 +2,7 @@
 using System.Net;
 using System.Net.Sockets;
 using System.Collections.Generic;
+using System.Threading;
 
 namespace PiGpio
 {
@@ -480,6 +481,7 @@ namespace PiGpio
         string m_host;
         int m_port;
         Socket m_socket;
+        Mutex m_lock;
         const int SOCKET_CMD_RESP_LENGTH = 16;
 
         public PiGpioSharp(string host = "localhost", int port = 8888)
@@ -487,6 +489,7 @@ namespace PiGpio
             m_host = host;
             m_port = port;
             m_socket = Connect();
+            m_lock = new Mutex();
         }
 
         public PiGpioSharp()
@@ -506,6 +509,7 @@ namespace PiGpio
                 m_host = "localhost";
             }
             m_socket = Connect();
+            m_lock = new Mutex();
         }
 
         public int Port
@@ -563,9 +567,28 @@ namespace PiGpio
 			return BitConverter.ToInt16(tmp, 0);
 		}
 
-        public int ExecuteCommand(CommandCode command, int p1, int p2, int p3 = 0, byte[] ext = null)
+        public int ExecuteCommand(CommandCode command, int p1, int p2, int p3 = 0, byte[] ext = null, bool releaseLock = true)
         {
-            return ExecuteCommand(m_socket, command, p1, p2, p3, ext);
+            int ret;
+            m_lock.WaitOne();
+            try
+            {
+                ret = ExecuteCommand(m_socket, command, p1, p2, p3, ext);
+            }
+            finally
+            {
+                if (releaseLock)
+                {
+                    m_lock.ReleaseMutex();
+                }
+            }
+
+            return ret;
+        }
+
+        public void ReleaseLock()
+        {
+            m_lock.ReleaseMutex();
         }
 
         public int ExecuteCommand(Socket s, CommandCode command, int p1, int p2, int p3 = 0, byte[] ext = null)
