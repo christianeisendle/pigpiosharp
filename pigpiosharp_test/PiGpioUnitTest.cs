@@ -7,6 +7,7 @@ namespace PiGpio.Test
     {
         static PiGpioSharp pi;
         static Gpio gpio;
+        static int m_count;
 
         [OneTimeSetUp]
         public static void Setup()
@@ -88,9 +89,36 @@ namespace PiGpio.Test
             gpio.Write(19, 0);
             var thread = new Thread(new ParameterizedThreadStart(PiGpioUnitTest.ToggleGpioDelayed));
             thread.Start(26);
+            gpio.StartGpioChangeListener();
             gpio.WaitForEdge(26, GpioEdge.RISING_EDGE, 1000);
+            gpio.StopGpioChangeListener();
         }
 
+        static void GpioLevelChangeHandler(int gpioNum, uint level, uint tick)
+        {
+            m_count++;
+        }
 
+        [Test]
+        public static void ToggleCount()
+        {
+            m_count = 0;
+            int maxCount = 100;
+            bool val = false;
+
+            gpio.SetMode(26, GpioMode.INPUT);
+            gpio.SetMode(19, GpioMode.OUTPUT);
+            gpio.Write(19, val ? 1 : 0);
+            gpio.StartGpioChangeListener();
+            gpio.RegisterLevelChangeCallback(26, GpioEdge.EITHER_EDGE, GpioLevelChangeHandler);
+            for (int i = 0; i < maxCount; i++)
+            {
+                val = !val;
+                gpio.Write(19, val ? 1 : 0);
+                Thread.Sleep(10);
+            }
+            Assert.That(m_count, Is.EqualTo(maxCount));
+            gpio.StopGpioChangeListener();
+        }
     }
 }

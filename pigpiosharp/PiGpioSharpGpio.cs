@@ -94,7 +94,8 @@ namespace PiGpio
         }
 
         readonly PiGpioSharp m_pi;
-        readonly Thread m_listenerThread;
+        Thread m_listenerThread;
+        uint m_lastLevel;
         bool m_run;
         int m_handle;
         uint m_monitor;
@@ -104,34 +105,39 @@ namespace PiGpio
         public Gpio(PiGpioSharp pi)
         {
             m_pi = pi;
-            m_run = true;
-            m_monitor = 0;
-            m_listenerThread = new Thread(new ParameterizedThreadStart(GpioChangeListener));
-            m_changeSubscribers = new List<GpioSubscriber>();
-            m_listenerThread.Start();
+            m_run = false;
+        }
+
+        public void StartGpioChangeListener()
+        {
+            if (!m_run)
+            {
+                m_run = true;
+                m_socket = m_pi.Connect();
+                m_lastLevel = (uint)m_pi.ExecuteCommand(m_socket, CommandCode.PI_CMD_BR1, 0, 0);
+                m_handle = m_pi.ExecuteCommand(m_socket, CommandCode.PI_CMD_NOIB, 0, 0);
+                m_monitor = 0;
+                m_listenerThread = new Thread(new ParameterizedThreadStart(GpioChangeListener));
+                m_changeSubscribers = new List<GpioSubscriber>();
+                m_listenerThread.Start();
+            }
         }
 
         public void StopGpioChangeListener()
         {
-            m_run = false;
-			m_pi.ExecuteCommand(CommandCode.PI_CMD_NC, m_handle, 0);
-            m_socket.Close();
-            m_listenerThread.Join();
+            if (m_run)
+            {
+                m_run = false;
+                m_pi.ExecuteCommand(CommandCode.PI_CMD_NC, m_handle, 0);
+                m_socket.Close();
+                m_listenerThread.Join();
+            }
         }
-
 
         void GpioChangeListener(object param)
         {
             byte[] buf;
-            uint lastLevel;
-
             int messageSize = 12;
-            m_socket = m_pi.Connect();
-
-
-            lastLevel = (uint)m_pi.ExecuteCommand(m_socket, CommandCode.PI_CMD_BR1, 0, 0);
-            m_handle = m_pi.ExecuteCommand(m_socket, CommandCode.PI_CMD_NOIB, 0, 0);
-
 
             while (m_run == true)
             {
@@ -145,8 +151,8 @@ namespace PiGpio
 
                     if (flags == 0)
                     {
-                        var changes = lastLevel ^ level;
-                        lastLevel = level;
+                        var changes = m_lastLevel ^ level;
+                        m_lastLevel = level;
                         foreach (var subscriber in m_changeSubscribers)
                         {
                             if (((1 << subscriber.GpioNumber) & changes) > 0)
@@ -223,10 +229,12 @@ namespace PiGpio
             AddChangeSubscriber(new GpioSubscriber(gpioNum, edge, callback));
         }
 
-
-
         public void WaitForEdge(int gpioNum, GpioEdge edge, int maxWaitingTimeInMs)
         {
+            if (!m_run)
+            {
+                throw new Exception("GPIO Listener Thread not started!");
+            }
             var tmpSubscriber = new GpioSubscriber(gpioNum, edge);
             AddChangeSubscriber(tmpSubscriber);
             var result = tmpSubscriber.WaitForChange(maxWaitingTimeInMs);
