@@ -30,6 +30,7 @@
     <Compile Include="PiGpioSharp.cs" />
     <Compile Include="PiGpioSharpI2C.cs" />
     <Compile Include="PiGpioSharpGpio.cs" />
+    <Compile Include="PiGpioSharpSerial.cs" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="System" />
