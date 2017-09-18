@@ -36,20 +36,27 @@ namespace PiGpio.Test
             Assert.That(() => gpio.GetMode(26), Is.EqualTo(GpioMode.INPUT));
         }
 
-        [Test]
-        public static void SetPullUp()
+        [TestCase(GpioPullUpDown.PUD_UP, 1)]
+        [TestCase(GpioPullUpDown.PUD_DOWN, 0)]
+        public static void SetPullUpDown(GpioPullUpDown pullUpDown, int expectedValue)
         {
-            gpio.SetMode(26, GpioMode.INPUT);
-            gpio.SetPullUpPullDown(26, GpioPullUpDown.PUD_UP);
-            Assert.That(() => gpio.Read(26), Is.EqualTo(1));
+            gpio.SetMode(13, GpioMode.INPUT);
+            gpio.SetPullUpPullDown(13, pullUpDown);
+            Assert.That(() => gpio.Read(13), Is.EqualTo(expectedValue));
         }
 
         [Test]
-        public static void SetPullDown()
+        public static void SetPullUpDriver()
         {
+            gpio.SetMode(19, GpioMode.OUTPUT);
             gpio.SetMode(26, GpioMode.INPUT);
-            gpio.SetPullUpPullDown(26, GpioPullUpDown.PUD_DOWN);
+            gpio.SetPullUpPullDown(26, GpioPullUpDown.PUD_UP);
+            gpio.SetPullUpPullDown(19, GpioPullUpDown.PUD_UP);
+            gpio.Write(19, 0);
             Assert.That(() => gpio.Read(26), Is.EqualTo(0));
+            gpio.SetMode(19, GpioMode.INPUT);
+            Assert.That(() => gpio.Read(26), Is.EqualTo(1));
+
         }
 
         [TestCase(0)]
