@@ -136,39 +136,47 @@ namespace PiGpio
 
         void GpioChangeListener(object param)
         {
-            byte[] buf;
+            
+            int recvSize = 4096;
+            byte[] buf = new byte[recvSize];
             int messageSize = 12;
 
             while (m_run == true)
             {
                 try
                 {
-                    buf = m_pi.GetMessage(m_socket, messageSize);
-                    var seq = (ushort)PiGpioSharp.GetInt16FromByteArrayEndianessCorrected(buf, 0);
-                    var flags = (ushort)PiGpioSharp.GetInt16FromByteArrayEndianessCorrected(buf, 2);
-                    var tick = (uint)PiGpioSharp.GetInt32FromByteArrayEndianessCorrected(buf, 4);
-                    var level = (uint)PiGpioSharp.GetInt32FromByteArrayEndianessCorrected(buf, 8);
+                    var bytesReceived = m_socket.Receive(buf, recvSize, SocketFlags.None);
+                    int offset = 0;
 
-                    if (flags == 0)
+                    while ((bytesReceived - offset) >= messageSize)
                     {
-                        var changes = m_lastLevel ^ level;
-                        m_lastLevel = level;
-                        foreach (var subscriber in m_changeSubscribers)
+                        var seq = (ushort)PiGpioSharp.GetInt16FromByteArrayEndianessCorrected(buf, 0 + offset);
+                        var flags = (ushort)PiGpioSharp.GetInt16FromByteArrayEndianessCorrected(buf, 2 + offset);
+                        var tick = (uint)PiGpioSharp.GetInt32FromByteArrayEndianessCorrected(buf, 4 + offset);
+                        var level = (uint)PiGpioSharp.GetInt32FromByteArrayEndianessCorrected(buf, 8 + offset);
+                        offset += messageSize;
+
+                        if (flags == 0)
                         {
-                            if (((1 << subscriber.GpioNumber) & changes) > 0)
+                            var changes = m_lastLevel ^ level;
+                            m_lastLevel = level;
+                            foreach (var subscriber in m_changeSubscribers)
                             {
-                                var newLevel = (uint)0;
-                                if (((1 << subscriber.GpioNumber) & level) > 0)
+                                if (((1 << subscriber.GpioNumber) & changes) > 0)
                                 {
-                                    newLevel = 1;
-                                }
-                                if ((newLevel ^ (uint)subscriber.Edge) > 0)
-                                {
-                                    subscriber.Callback(subscriber.GpioNumber, newLevel, tick);
+                                    var newLevel = (uint)0;
+                                    if (((1 << subscriber.GpioNumber) & level) > 0)
+                                    {
+                                        newLevel = 1;
+                                    }
+                                    if ((newLevel ^ (uint)subscriber.Edge) > 0)
+                                    {
+                                        subscriber.Callback(subscriber.GpioNumber, newLevel, tick);
+                                    }
                                 }
                             }
                         }
-                    }
+					}
                     /* TODO: Add other flags */
                 }
 
