@@ -100,12 +100,14 @@ namespace PiGpio
         int m_handle;
         uint m_monitor;
         Socket m_socket;
-        List<GpioSubscriber> m_changeSubscribers;
+        Mutex m_lock;
+        Dictionary<int, GpioSubscriber> m_changeSubscribers;
 
         public Gpio(PiGpioSharp pi)
         {
             m_pi = pi;
             m_run = false;
+            m_lock = new Mutex();
         }
 
         public void StartGpioChangeListener()
@@ -118,7 +120,7 @@ namespace PiGpio
                 m_handle = m_pi.ExecuteCommand(m_socket, CommandCode.PI_CMD_NOIB, 0, 0);
                 m_monitor = 0;
                 m_listenerThread = new Thread(new ParameterizedThreadStart(GpioChangeListener));
-                m_changeSubscribers = new List<GpioSubscriber>();
+                m_changeSubscribers = new Dictionary<int, GpioSubscriber>();
                 m_listenerThread.Start();
             }
         }
@@ -160,18 +162,21 @@ namespace PiGpio
                         {
                             var changes = m_lastLevel ^ level;
                             m_lastLevel = level;
-                            foreach (var subscriber in m_changeSubscribers)
+                            m_lock.WaitOne();
+                            var tmpsubscribers = new Dictionary<int, GpioSubscriber>(m_changeSubscribers);
+                            m_lock.ReleaseMutex();
+                            foreach (var subscriber in tmpsubscribers)
                             {
-                                if (((1 << subscriber.GpioNumber) & changes) > 0)
+                                if (((1 << subscriber.Value.GpioNumber) & changes) > 0)
                                 {
                                     var newLevel = (uint)0;
-                                    if (((1 << subscriber.GpioNumber) & level) > 0)
+                                    if (((1 << subscriber.Value.GpioNumber) & level) > 0)
                                     {
                                         newLevel = 1;
                                     }
-                                    if ((newLevel ^ (uint)subscriber.Edge) > 0)
+                                    if ((newLevel ^ (uint)subscriber.Value.Edge) > 0)
                                     {
-                                        subscriber.Callback(subscriber.GpioNumber, newLevel, tick);
+                                        subscriber.Value.Callback(subscriber.Value.GpioNumber, newLevel, tick);
                                     }
                                 }
                             }
@@ -185,25 +190,37 @@ namespace PiGpio
             }
         }
 
-        void AddChangeSubscriber(GpioSubscriber subscriber)
+        int AddChangeSubscriber(GpioSubscriber subscriber)
         {
+            int hash = subscriber.GetHashCode();
             m_monitor |= (uint)1 << subscriber.GpioNumber;
-            m_changeSubscribers.Add(subscriber);
+            m_lock.WaitOne();
+            m_changeSubscribers.Add(hash, subscriber);
+            m_lock.ReleaseMutex();
             m_pi.ExecuteCommand(CommandCode.PI_CMD_NB, m_handle, (int)m_monitor);
+            return hash;
         }
 
-		void RemoveChangeSubscriber(GpioSubscriber subscriber)
+		void RemoveChangeSubscriber(int hash)
 		{
-            m_changeSubscribers.Remove(subscriber);
             uint newMonitor = 0;
-            foreach(var s in m_changeSubscribers)
+            m_lock.WaitOne();
+            try
             {
-                newMonitor |= (uint)1 << s.GpioNumber;
+                m_changeSubscribers.Remove(hash);
+                foreach (var s in m_changeSubscribers)
+                {
+                    newMonitor |= (uint)1 << s.Value.GpioNumber;
+                }
+            }
+            finally
+            {
+                m_lock.ReleaseMutex();
             }
             if (newMonitor != m_monitor)
             {
                 m_monitor = newMonitor;
-				m_pi.ExecuteCommand(CommandCode.PI_CMD_NB, m_handle, (int)m_monitor);
+                m_pi.ExecuteCommand(CommandCode.PI_CMD_NB, m_handle, (int)m_monitor);
             }
 		}
 
@@ -232,9 +249,14 @@ namespace PiGpio
             m_pi.ExecuteCommand(CommandCode.PI_CMD_WRITE, gpioNum, value);
         }
 
-        public void RegisterLevelChangeCallback(int gpioNum, GpioEdge edge, GpioLevelChangeHandler callback)
+        public int RegisterLevelChangeCallback(int gpioNum, GpioEdge edge, GpioLevelChangeHandler callback)
         {
-            AddChangeSubscriber(new GpioSubscriber(gpioNum, edge, callback));
+            return AddChangeSubscriber(new GpioSubscriber(gpioNum, edge, callback));
+        }
+
+        public void UnregisterLevelChangeCallback(int id)
+        {
+            RemoveChangeSubscriber(id);
         }
 
         public void WaitForEdge(int gpioNum, GpioEdge edge, int maxWaitingTimeInMs)
@@ -244,9 +266,9 @@ namespace PiGpio
                 throw new Exception("GPIO Listener Thread not started!");
             }
             var tmpSubscriber = new GpioSubscriber(gpioNum, edge);
-            AddChangeSubscriber(tmpSubscriber);
+            int hash = AddChangeSubscriber(tmpSubscriber);
             var result = tmpSubscriber.WaitForChange(maxWaitingTimeInMs);
-            RemoveChangeSubscriber(tmpSubscriber);
+            RemoveChangeSubscriber(hash);
             if (!result)
             {
                 throw new TimeoutException("Timeout waiting for level change on GPIO " + gpioNum);

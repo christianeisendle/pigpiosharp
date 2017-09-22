@@ -14,6 +14,7 @@ namespace PiGpio.Test
         {
             pi = new PiGpioSharp("raspi", 8888);
             gpio = new Gpio(pi);
+            gpio.StartGpioChangeListener();
         }
 
         [OneTimeTearDown]
@@ -109,15 +110,17 @@ namespace PiGpio.Test
             gpio.SetMode(26, GpioMode.INPUT);
             gpio.SetMode(19, GpioMode.OUTPUT);
             gpio.Write(19, val ? 1 : 0);
-            gpio.StartGpioChangeListener();
-            gpio.RegisterLevelChangeCallback(26, GpioEdge.EITHER_EDGE, GpioLevelChangeHandler);
+
+            var id1 = gpio.RegisterLevelChangeCallback(26, GpioEdge.FALLING_EDGE, GpioLevelChangeHandler);
+            var id2 = gpio.RegisterLevelChangeCallback(26, GpioEdge.RISING_EDGE, GpioLevelChangeHandler);
             for (int i = 0; i < maxCount; i++)
             {
                 val = !val;
                 gpio.Write(19, val ? 1 : 0);
             }
             Thread.Sleep(100);
-			gpio.StopGpioChangeListener();
+            gpio.UnregisterLevelChangeCallback(id1);
+            gpio.UnregisterLevelChangeCallback(id2);
             Assert.That(m_count, Is.EqualTo(maxCount));
         }
     }
