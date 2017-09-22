@@ -103,7 +103,7 @@ namespace PiGpio.Test
         public static void ToggleCount()
         {
             m_count = 0;
-            int maxCount = 100;
+            int maxCount = 1000;
             bool val = false;
 
             gpio.SetMode(26, GpioMode.INPUT);
@@ -115,10 +115,10 @@ namespace PiGpio.Test
             {
                 val = !val;
                 gpio.Write(19, val ? 1 : 0);
-                Thread.Sleep(10);
             }
+            Thread.Sleep(100);
+			gpio.StopGpioChangeListener();
             Assert.That(m_count, Is.EqualTo(maxCount));
-            gpio.StopGpioChangeListener();
         }
     }
 }
