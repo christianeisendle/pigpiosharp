@@ -39,8 +39,10 @@ namespace PiGpio
             try
             {
                 var numReceivedBytes = m_pi.ExecuteCommand(CommandCode.PI_CMD_SERR, m_handle, count, 0, null, false);
-                readData = m_pi.GetMessage(numReceivedBytes);
+                if (numReceivedBytes != count)
+                    throw new CommandFailedException(ErrorCode.PI_SER_READ_FAILED);
 
+                readData = m_pi.GetMessage(numReceivedBytes);
             }
             finally
             {
