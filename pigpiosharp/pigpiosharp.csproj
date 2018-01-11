@@ -27,6 +27,7 @@
     <PlatformTarget>x86</PlatformTarget>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="AssemblyVersion.cs" />
     <Compile Include="PiGpioSharp.cs" />
     <Compile Include="PiGpioSharpI2C.cs" />
     <Compile Include="PiGpioSharpGpio.cs" />
