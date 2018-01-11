@@ -476,7 +476,7 @@ namespace PiGpio
         PI_BAD_EVENT_ID = -143  // bad event id
     }
 
-    public class PiGpioSharp
+    public class PiGpioSharp : IDisposable
     {
         string m_host;
         int m_port;
@@ -632,5 +632,27 @@ namespace PiGpio
         {
             return GetMessage(m_socket, count);
         }
-    }
+
+        #region IDisposable Support
+        private bool disposedValue = false;
+
+        protected virtual void Dispose(bool disposing)
+        {
+          if (!disposedValue)
+          {
+            if (disposing)
+            {
+                m_lock.Close();
+            }
+
+            disposedValue = true;
+          }
+        }
+
+        public void Dispose()
+        {
+          Dispose(true);
+        }
+        #endregion
+  }
 }

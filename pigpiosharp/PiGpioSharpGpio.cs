@@ -34,9 +34,9 @@ namespace PiGpio
         EITHER_EDGE = 2
     }
 
-    public class Gpio
+    public class Gpio : IDisposable
     {
-        class GpioSubscriber
+        class GpioSubscriber : IDisposable
         {
             GpioLevelChangeHandler m_callback;
             int m_gpioNumber;
@@ -91,9 +91,30 @@ namespace PiGpio
                     return m_edge;
                 }
             }
-        }
+            #region IDisposable Support
+            private bool disposedValue = false;
 
-        readonly PiGpioSharp m_pi;
+            protected virtual void Dispose(bool disposing)
+            {
+                if (!disposedValue)
+                {
+                    if (disposing)
+                    {
+                        m_event.Close();
+                    }
+
+                    disposedValue = true;
+                }
+            }
+
+            public void Dispose()
+            {
+                Dispose(true);
+            }
+            #endregion
+    }
+
+    readonly PiGpioSharp m_pi;
         Thread m_listenerThread;
         uint m_lastLevel;
         bool m_run;
@@ -139,7 +160,7 @@ namespace PiGpio
         void GpioChangeListener(object param)
         {
             
-            int recvSize = 4096;
+            int recvSize = 12;
             byte[] buf = new byte[recvSize];
             int messageSize = 12;
 
@@ -274,5 +295,27 @@ namespace PiGpio
                 throw new TimeoutException("Timeout waiting for level change on GPIO " + gpioNum);
             }
         }
+
+    #region IDisposable Support
+    private bool disposedValue = false;
+
+    protected virtual void Dispose(bool disposing)
+    {
+      if (!disposedValue)
+      {
+        if (disposing)
+        {
+          m_lock.Close();
+        }
+
+        disposedValue = true;
+      }
     }
+
+    public void Dispose()
+    {
+      Dispose(true);
+    }
+    #endregion
+  }
 }
