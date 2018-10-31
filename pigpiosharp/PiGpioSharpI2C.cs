@@ -12,7 +12,8 @@
 
         public void Open(int bus, int address, int i2c_flags = 0)
         {
-            m_handle = m_pi.ExecuteCommand(CommandCode.PI_CMD_I2CO, bus, address, i2c_flags);
+            var flags = PiGpioSharp.GetBytesFromInt32EndianessCorrected(i2c_flags);
+            m_handle = m_pi.ExecuteCommand(CommandCode.PI_CMD_I2CO, bus, address, flags.Length, flags);
         }
 
         public void Close()
