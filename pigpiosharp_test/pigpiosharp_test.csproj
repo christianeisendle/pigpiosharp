@@ -40,6 +40,7 @@
     <Compile Include="PiGpioSharpUnitTest.cs" />
     <Compile Include="PiGpioUnitTest.cs" />
     <Compile Include="PiGpioSerialUnitTest.cs" />
+    <Compile Include="PiGpioEventTimerTest.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\pigpiosharp\pigpiosharp.csproj">
