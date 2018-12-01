@@ -159,8 +159,8 @@ namespace PiGpio
 
         void GpioChangeListener(object param)
         {
-            
-            int recvSize = 12;
+            int recvSize = 4096;
+            var remainingBytes = 0;
             byte[] buf = new byte[recvSize];
             int messageSize = 12;
 
@@ -168,16 +168,17 @@ namespace PiGpio
             {
                 try
                 {
-                    var bytesReceived = m_socket.Receive(buf, recvSize, SocketFlags.None);
+                    var bytesReceived = m_socket.Receive(buf, remainingBytes, recvSize - remainingBytes, SocketFlags.None);
+                    remainingBytes += bytesReceived;
                     int offset = 0;
-
-                    while ((bytesReceived - offset) >= messageSize)
+                    while (remainingBytes >= messageSize)
                     {
                         var seq = (ushort)PiGpioSharp.GetInt16FromByteArrayEndianessCorrected(buf, 0 + offset);
                         var flags = (ushort)PiGpioSharp.GetInt16FromByteArrayEndianessCorrected(buf, 2 + offset);
                         var tick = (uint)PiGpioSharp.GetInt32FromByteArrayEndianessCorrected(buf, 4 + offset);
                         var level = (uint)PiGpioSharp.GetInt32FromByteArrayEndianessCorrected(buf, 8 + offset);
                         offset += messageSize;
+                        remainingBytes -= messageSize;
 
                         if (flags == 0)
                         {
@@ -202,8 +203,8 @@ namespace PiGpio
                                 }
                             }
                         }
-					}
-                    /* TODO: Add other flags */
+                    }
+                    Array.Copy(buf, offset, buf, 0, remainingBytes);
                 }
 
                 catch (SocketException)
